@@ -205,8 +205,8 @@ namespace CleanupAgent
 		/// </summary>
 		public void CleanupDocker()
 		{
-			Run("docker", "system purge -f");
-			Run("docker", "system purge --volumes -f");
+			Run("docker", "system prune -fa --filter until=168h");
+			Run("docker", "system prune -fa --volumes");
 		}
 
 		internal void Run(string cmd, string args)
