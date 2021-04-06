@@ -24,9 +24,6 @@ namespace CleanupAgent
 				TimeToKeep = TimeSpan.FromDays(30),
 			};
 
-			// before stopping wsl for shrinking, let's docker system purge
-			cleaner.CleanupDocker();
-
 			for (int i = 0; i < args.Length; i++)
 			{
 				var arg = args[i];
@@ -71,6 +68,12 @@ namespace CleanupAgent
 						}
 					}
 				}
+			}
+
+			if (cleaner.DryRun == false)
+			{
+				// before stopping wsl for shrinking, let's docker system purge
+				cleaner.CleanupDocker();
 			}
 
 			// C:\TEMP

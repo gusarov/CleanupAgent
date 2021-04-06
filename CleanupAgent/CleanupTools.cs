@@ -188,7 +188,7 @@ namespace CleanupAgent
 
 			// Optimize docker vhd
 			var path = Path.Combine(profilePath, @"AppData\Local\Docker\wsl\data\ext4.vhdx");
-			if (File.Exists(path))
+			if (File.Exists(path) && DryRun == false)
 			{
 				var orig = new FileInfo(path).Length;
 				Run("wsl", $"--shutdown");
