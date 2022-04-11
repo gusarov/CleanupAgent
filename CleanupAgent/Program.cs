@@ -140,6 +140,8 @@ namespace CleanupAgent
 			cleaner.CleanupUserProfile(Path.Combine(Environment.GetEnvironmentVariable("WinDir"), "SysWOW64\\config\\systemprofile"), context);
 
 			var users = Path.Combine(Environment.GetEnvironmentVariable("SystemDrive"), "Users");
+			// C:\Users\_tfs
+			cleaner.CleanupUserProfile(@"C:\Users\_tfs", context);
 			foreach (var user in Directory.GetDirectories(users))
 			{
 				cleaner.CleanupUserProfile(user, context);

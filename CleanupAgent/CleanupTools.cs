@@ -179,12 +179,14 @@ namespace CleanupAgent
 		/// </summary>
 		public void CleanupUserProfile(string profilePath, Context context)
 		{
-			DeleteOldContent(Path.Combine(profilePath, "AppData/Local/Temp"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData/Local/Microsoft/Windows/IECompatCache"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData/Local/Microsoft/Windows/IECompatUaCache"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData/Local/Microsoft/Windows/IEDownloadHistory"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData/Local/Microsoft/Windows/INetCache"), context);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Temp"), context);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatCache"), context);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatUaCache"), context);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IEDownloadHistory"), context);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\INetCache"), context);
 			DeleteOldContent(Path.Combine(profilePath, "Downloads"), context);
+			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Roaming\\npm-cache"), context);
+			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Local\\NuGet"), context);
 
 			// Optimize docker vhd
 			var path = Path.Combine(profilePath, @"AppData\Local\Docker\wsl\data\ext4.vhdx");
@@ -196,6 +198,27 @@ namespace CleanupAgent
 				Run("powershell", $"-NonInteractive -Command \"& {{Optimize-VHD -Path {path} -Mode Full}}\"");
 				var newSize = new FileInfo(path).Length;
 				context.TotalLogicalBytes += orig - newSize;
+			}
+		}
+
+		/// <summary>
+		/// e.g. NuGet cache, etc
+		/// </summary>
+		/// <param name="path"></param>
+		/// <param name="context"></param>
+		private void DeleteFolderMonthly(string path, Context context)
+		{
+			var fi = new DirectoryInfo(path);
+			if (fi.Exists && (DateTime.UtcNow - fi.CreationTimeUtc).TotalDays > 30)
+			{
+				try
+				{
+					fi.Delete(true);
+				}
+				catch (IOException ex)
+				{
+					_log.Error($"{fi.FullName}: {ex.Message}");
+				}
 			}
 		}
 
