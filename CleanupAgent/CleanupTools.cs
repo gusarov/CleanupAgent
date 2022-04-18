@@ -109,7 +109,8 @@ namespace CleanupAgent
 			var delete = false;
 			if (context.TimeToKeep != default)
 			{
-				var age = TouchedAgo(fsInfo, now);
+				var age = WrittenAgo(fsInfo, now);
+				// var age = TouchedAgo(fsInfo, now);
 				if (age > context.TimeToKeep)
 				{
 					delete = true;
@@ -171,6 +172,13 @@ namespace CleanupAgent
 				age = cre;
 			}
 			return age;
+		}
+
+		TimeSpan WrittenAgo(FileSystemInfo fs, DateTime now)
+		{
+			var wri = now - fs.LastWriteTimeUtc;
+			var cre = now - fs.CreationTimeUtc;
+			return cre < wri ? cre : wri;
 		}
 
 		/// <summary>

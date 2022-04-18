@@ -146,12 +146,13 @@ namespace CleanupAgent.Tests
 			file.LastWriteTimeUtc =
 			file.CreationTimeUtc = DateTime.UtcNow.AddDays(-40);
 
+			Assert.AreEqual(_total, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 			_sut.DeleteOldContent("Data", _context30);
 			Assert.AreEqual(_total - 1, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 		}
 
 		[TestMethod]
-		public void Should_20_DeleteOldContent_if_all_3_dates_are_old_1()
+		public void Should_20_DeleteOldContent_if_all_2_dates_are_old_1()
 		{
 			var file = new FileInfo("Data/B/temp2.txt");
 			file.LastAccessTimeUtc = DateTime.UtcNow.AddDays(-40);
@@ -163,7 +164,7 @@ namespace CleanupAgent.Tests
 		}
 
 		[TestMethod]
-		public void Should_20_DeleteOldContent_if_all_3_dates_are_old_2()
+		public void Should_20_DeleteOldContent_if_all_2_dates_are_old_2()
 		{
 			var file = new FileInfo("Data/B/temp2.txt");
 			file.LastAccessTimeUtc = DateTime.UtcNow.AddDays(-40);
@@ -175,15 +176,27 @@ namespace CleanupAgent.Tests
 		}
 
 		[TestMethod]
-		public void Should_20_DeleteOldContent_if_all_3_dates_are_old_3()
+		public void Should_20_DeleteOldContent_if_all_2_dates_are_old_3()
 		{
 			var file = new FileInfo("Data/B/temp2.txt");
-			// file.LastAccessTimeUtc = DateTime.UtcNow.AddDays(-40);
+			file.LastAccessTimeUtc = DateTime.UtcNow;
 			file.LastWriteTimeUtc = DateTime.UtcNow.AddDays(-40);
 			file.CreationTimeUtc = DateTime.UtcNow.AddDays(-40);
 
 			_sut.DeleteOldContent("Data", _context30);
-			Assert.AreEqual(_total, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
+			Assert.AreEqual(_total - 1, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
+		}
+
+		[TestMethod]
+		public void Should_20_DeleteOldContent_regardless_off_access_date()
+		{
+			var file = new FileInfo("Data/B/temp2.txt");
+			file.LastAccessTimeUtc = DateTime.UtcNow;
+			file.LastWriteTimeUtc = DateTime.UtcNow.AddDays(-40);
+			file.CreationTimeUtc = DateTime.UtcNow.AddDays(-40);
+
+			_sut.DeleteOldContent("Data", _context30);
+			Assert.AreEqual(_total - 1, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 		}
 
 		[TestMethod]

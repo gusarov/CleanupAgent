@@ -1,7 +1,8 @@
 {
   "profiles": {
     "CleanupAgent": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "--dryrun"
     }
   }
 }
