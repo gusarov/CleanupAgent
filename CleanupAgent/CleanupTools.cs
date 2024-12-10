@@ -4,12 +4,21 @@ using System.IO;
 
 namespace CleanupAgent
 {
-	public class Context
+	/// <summary>
+	/// Mostly statistics or scan-wide data
+	/// </summary>
+	public class Statistics
 	{
-		public TimeSpan TimeToKeep { get; set; }
 		public long TotalLogicalBytes { get; set; }
 		public long TotalItems { get; set; }
+	}
 
+	/// <summary>
+	/// Mostly options to let it override as environment (copy on call)
+	/// </summary>
+	public struct ContextSettings
+	{
+		public TimeSpan TimeToKeep { get; set; }
 		internal int Level { get; set; }
 	}
 
@@ -20,12 +29,17 @@ namespace CleanupAgent
 
 		public bool? DryRun { get; set; }
 
+		Statistics _statistics;
+		public Statistics Statistics => _statistics;
+
 		public CleanupTools(ITimeProvider timeProvider, IResultLog log)
 		{
 			_timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 			_log = log ?? throw new ArgumentNullException(nameof(log));
+			_statistics= new Statistics();
 		}
 
+		/*
 		/// <summary>
 		/// :clean
 		/// This method deletes all files and folders from specified location, but never deletes folder itself, this way ACLS are preserved
@@ -35,23 +49,20 @@ namespace CleanupAgent
 		{
 			DeleteOldContent(folder, new Context());
 		}
+		*/
 
 		/// <summary>
 		/// :old
 		/// This method deletes all old files and folders from specified location
 		/// </summary>
-		public void DeleteOldContent(string folder, Context context)
+		public void DeleteOldContent(string folder, ContextSettings context)
 		{
 			var cd = new DirectoryInfo(folder);
 			DeleteOldContent(cd, context);
 		}
 
-		public void DeleteOldContent(DirectoryInfo folder, Context context)
+		public void DeleteOldContent(DirectoryInfo folder, ContextSettings context)
 		{
-			if (context == null)
-			{
-				throw new ArgumentNullException(nameof(context));
-			}
 			if (context.TimeToKeep.TotalDays < 0)
 			{
 				throw new ArgumentException("Time to keep", nameof(context));
@@ -104,7 +115,7 @@ namespace CleanupAgent
 			}
 		}
 
-		private void JudgeAndDelete(Context context, FileSystemInfo fsInfo, DateTime now)
+		private void JudgeAndDelete(ContextSettings context, FileSystemInfo fsInfo, DateTime now)
 		{
 			var delete = false;
 			if (context.TimeToKeep != default)
@@ -148,8 +159,8 @@ namespace CleanupAgent
 						fsInfo.Delete();
 					}
 
-					context.TotalItems++;
-					context.TotalLogicalBytes += logicalSize;
+					_statistics.TotalItems++;
+					_statistics.TotalLogicalBytes += logicalSize;
 				}
 				catch (IOException ex)
 				{
@@ -185,16 +196,24 @@ namespace CleanupAgent
 		/// :user
 		/// This method performs cleanup from user profile, so can be reused per user
 		/// </summary>
-		public void CleanupUserProfile(string profilePath, Context context)
+		public void CleanupUserProfile(string profilePath, ContextSettings context)
 		{
-			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Temp"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatCache"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatUaCache"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IEDownloadHistory"), context);
-			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\INetCache"), context);
-			DeleteOldContent(Path.Combine(profilePath, "Downloads"), context);
-			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Roaming\\npm-cache"), context);
-			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Local\\NuGet"), context);
+			var weekContext = context;
+			weekContext.TimeToKeep = TimeSpan.FromDays(7);
+
+			var monthContext = context;
+			monthContext.TimeToKeep = TimeSpan.FromDays(30);
+
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Temp"), weekContext);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatCache"), weekContext);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IECompatUaCache"), weekContext);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\IEDownloadHistory"), weekContext);
+			DeleteOldContent(Path.Combine(profilePath, "AppData\\Local\\Microsoft\\Windows\\INetCache"), weekContext);
+			DeleteOldContent(Path.Combine(profilePath, "Downloads"), monthContext);
+
+			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Roaming\\npm-cache"));
+			DeleteFolderMonthly(Path.Combine(profilePath, "AppData\\Local\\NuGet"));
+			DeleteFolderMonthly(Path.Combine(profilePath, ".nuget\\packages"));
 
 			// Optimize docker vhd
 			var path = Path.Combine(profilePath, @"AppData\Local\Docker\wsl\data\ext4.vhdx");
@@ -205,7 +224,7 @@ namespace CleanupAgent
 				Run("net", $"start vmms");
 				Run("powershell", $"-NonInteractive -Command \"& {{Optimize-VHD -Path {path} -Mode Full}}\"");
 				var newSize = new FileInfo(path).Length;
-				context.TotalLogicalBytes += orig - newSize;
+				_statistics.TotalLogicalBytes += orig - newSize;
 			}
 		}
 
@@ -214,7 +233,7 @@ namespace CleanupAgent
 		/// </summary>
 		/// <param name="path"></param>
 		/// <param name="context"></param>
-		private void DeleteFolderMonthly(string path, Context context)
+		private void DeleteFolderMonthly(string path)
 		{
 			var fi = new DirectoryInfo(path);
 			if (fi.Exists && (DateTime.UtcNow - fi.CreationTimeUtc).TotalDays > 30)

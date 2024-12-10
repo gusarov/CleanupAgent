@@ -19,7 +19,7 @@ namespace CleanupAgent
 			var errorLog = new ConsoleResultLog();
 			var cleaner = new CleanupTools(new TimeProvider(), errorLog);
 
-			var context = new Context
+			var context = new ContextSettings
 			{
 				TimeToKeep = TimeSpan.FromDays(30),
 			};
@@ -134,7 +134,7 @@ namespace CleanupAgent
 				foreach (var tDir in Directory.GetDirectories(dir, "Temporary ASP.NET Files"))
 				{
 					Console.WriteLine(tDir);
-					cleaner.DeleteContent(tDir);
+					cleaner.DeleteOldContent(tDir, context);
 				}
 			}
 			foreach (var dir in Directory.GetDirectories(Path.Combine(msNet, "Framework64"), "v*"))
@@ -142,7 +142,7 @@ namespace CleanupAgent
 				foreach (var tDir in Directory.GetDirectories(dir, "Temporary ASP.NET Files"))
 				{
 					Console.WriteLine(tDir);
-					cleaner.DeleteContent(tDir);
+					cleaner.DeleteOldContent(tDir, context);
 				}
 			}
 
@@ -158,8 +158,8 @@ namespace CleanupAgent
 				cleaner.CleanupUserProfile(user, context);
 			}
 
-			Console.WriteLine($"Total reclaimed: {context.TotalLogicalBytes:N0} bytes (logical)");
-			Console.WriteLine($"Total deleted: {context.TotalItems} items");
+			Console.WriteLine($"Total reclaimed: {cleaner.Statistics.TotalLogicalBytes:N0} bytes (logical)");
+			Console.WriteLine($"Total deleted: {cleaner.Statistics.TotalItems} items");
 
 			return errorLog.AtLeastOneError ? 1 : 0;
 		}

@@ -96,12 +96,12 @@ namespace CleanupAgent.Tests
 
 		private long _total = 16;
 
-		private Context _contextAll = new()
+		private ContextSettings _contextAll = new()
 		{
 
 		};
 
-		private Context _context30 = new()
+		private ContextSettings _context30 = new()
 		{
 			TimeToKeep = TimeSpan.FromDays(30),
 		};
@@ -115,7 +115,7 @@ namespace CleanupAgent.Tests
 		[TestMethod]
 		public void Should_10_DeleteContent_with_system_and_hidden_files()
 		{
-			_sut.DeleteContent("Data");
+			_sut.DeleteOldContent("Data", default);
 			Assert.AreEqual(1, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 			Assert.IsTrue(File.Exists("Data/desktop.ini"), "special file should stay");
 		}
@@ -124,7 +124,7 @@ namespace CleanupAgent.Tests
 		public void Should_10_not_DeleteContent_when_dry_run()
 		{
 			_sut.DryRun = true;
-			_sut.DeleteContent("Data");
+			_sut.DeleteOldContent("Data", default);
 			Assert.AreEqual(_total, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 		}
 
@@ -133,7 +133,7 @@ namespace CleanupAgent.Tests
 		{
 			using (File.OpenRead("Data/A/temp1.txt"))
 			{
-				_sut.DeleteContent("Data");
+				_sut.DeleteOldContent("Data", default);
 				Assert.AreEqual(3, Directory.GetFileSystemEntries("Data", "*", SearchOption.AllDirectories).Length);
 			}
 		}
