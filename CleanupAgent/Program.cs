@@ -76,6 +76,17 @@ namespace CleanupAgent
 				cleaner.CleanupDocker();
 			}
 
+			// %TEMP%
+			Console.WriteLine($"Cleanup %tmp%...");
+			try
+			{
+				cleaner.DeleteOldContent(Path.GetTempPath(), context);
+			}
+			catch (Exception ex)
+			{
+				errorLog.Error($"{Path.GetTempPath()}: {ex.Message}");
+			}
+
 			// C:\TEMP
 			foreach (var drive in DriveInfo.GetDrives())
 			{
